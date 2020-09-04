@@ -17,7 +17,7 @@
         }
         
         #mainWrapper{
-            display:none;
+            display: none;
         }
 
         #chatWrapper{
@@ -50,12 +50,14 @@
 
         input{
             height:30px;
+            border: 1px #ccc solid;
         }
     </style>
 <body>
     <div id = "container">
         <div id = "namesWrapper">
             <h2>ChatIO</h2>
+            <div id = "error"></div>
             <p>Create UserName: </p>
             <form id = "usernameForm">
                 <input type = "text" size = "35" id = "username">
@@ -77,9 +79,54 @@
                 <div id = "user"></div>
             </div>
         </div>
-
-    
     </div>
 </body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    $(function(){
+        var socket = io.connect();
+        var $messageForm = $('#messageForm');
+        var $message = $('#message');
+        var $chat = $('#chatWindow');
+        var $usernameForm = $('#usernameForm');
+        var $username = $('#username');
+        var $user = $('#user');
+        var $error = $('#error');
+
+        $usernameForm.submit(function(e){
+            e.preventDefault();
+
+            socket.emit('new user', $username.val(), function(data){
+                if(data){
+                    $('#namesWrapper').hide();
+                    $('#mainWrapper').show();
+                }else{
+                    $error.html("The username is taken");
+                }
+                
+            });
+            $username.val('');
+        });
+        socket.on('usernames', function(data){
+            var strHtml = '';
+            for(i = 0; i<data.length; i++){
+                strHtml += data[i] + "<br>";
+            }
+            $user.html(strHtml);
+        });
+
+
+        $messageForm.submit(function(e){
+            e.preventDefault();
+            socket.emit('send message', {msg : $message.val()});
+            $message.val('');
+        });
+        socket.on('new message', function(data){
+            $chat.append('<strong>' + data.username + '</strong>:' + data.msg + '<br>');
+        });
+    });
+</script>
 </head>
 </html>
